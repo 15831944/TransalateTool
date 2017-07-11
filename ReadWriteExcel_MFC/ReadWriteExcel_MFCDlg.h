@@ -4,6 +4,8 @@
 
 #pragma once
 #include <map>
+#include <list>
+#include <vector>
 #include ".\excelReader\Application.h"
 #include ".\excelReader\Workbooks.h"
 #include ".\excelReader\Workbook.h"
@@ -56,10 +58,17 @@ private:
 	//将处理后的文件转换成UTF8编码格式
 	void ConvertTsFileToUTF8();
 	std::string string_To_UTF8(const std::string & str);
+	void GetAllFormatFiles(string path, vector<string>& files, string format);
+	string trim(string& s);
+	string getFileName(string strFilePath);
+	//获取当前解决方案中所有的ts文件并拷贝到一个特定的文件夹下
+	bool getAllProjectTsFile();
+
 
 private:
     CString m_SourceFilePathName;//存储翻译对应关系的excel文件
     CString m_ResultFilePathName; //需要被翻译文件的绝对路径
+	map<std::string,map<CString, CString>> m_AllLanguageMap;//全语言字典；
     map<CString, CString> m_TranslateMap;//翻译对应关系键值对
     CApplication m_ExcelApp;
     CWorkbooks m_books;
@@ -71,4 +80,6 @@ private:
     BOOL          already_preload_;
     ///Create the SAFEARRAY from the VARIANT ret.
     COleSafeArray ole_safe_array_;
+	vector<string> m_AllExcelFile;//所有的excel文件的集合
+	vector<string> m_AllTsFile; //所有的ts文件的集合
 };
