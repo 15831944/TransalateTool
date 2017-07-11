@@ -21,7 +21,6 @@ public:
 
 // 对话框数据
 	enum { IDD = IDD_READWRITEEXCEL_MFC_DIALOG };
-
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
@@ -29,7 +28,6 @@ public:
 // 实现
 protected:
 	HICON m_hIcon;
-
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -52,6 +50,12 @@ private:
     int GetRowCount();
     CString GetCell(long iRow, long iColumn);
     void PreLoadSheet();
+	void TranslateTsFile();
+	std::string TraslateRawData(std::string strRawData);
+	BOOL WStringToString(const std::wstring &wstr, std::string &str);
+	//将处理后的文件转换成UTF8编码格式
+	void ConvertTsFileToUTF8();
+	std::string string_To_UTF8(const std::string & str);
 
 private:
     CString m_SourceFilePathName;//存储翻译对应关系的excel文件

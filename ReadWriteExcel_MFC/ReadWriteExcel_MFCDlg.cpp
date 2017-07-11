@@ -4,14 +4,19 @@
 
 #include "stdafx.h"
 #include <iostream>
+#include <fstream>
 #include "ReadWriteExcel_MFC.h"
 #include "ReadWriteExcel_MFCDlg.h"
+#include "tinyxml2.h"
 #include "afxdialogex.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+using namespace  std;
+using namespace tinyxml2;
+#pragma comment(lib,"tinyxml2.lib")
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
@@ -68,7 +73,6 @@ BEGIN_MESSAGE_MAP(CReadWriteExcel_MFCDlg, CDialogEx)
     ON_BN_CLICKED(ID_TRANSLATE, &CReadWriteExcel_MFCDlg::OnBnClickedTranslate)
     ON_WM_CLOSE()
 END_MESSAGE_MAP()
-
 
 // CReadWriteExcel_MFCDlg 消息处理程序
 
@@ -155,8 +159,6 @@ HCURSOR CReadWriteExcel_MFCDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
-
 void CReadWriteExcel_MFCDlg::OnBnClickedFindsource()
 {
     CFileDialog dlg(TRUE, //TRUE为OPEN对话框，FALSE为SAVE AS对话框
@@ -199,11 +201,11 @@ void CReadWriteExcel_MFCDlg::OnBnClickedSetresultpath()
     GetDlgItem(IDC_SETRESULTPATH_EDIT)->SetWindowText(m_ResultFilePathName);
 }
 
-
 void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
 {
     // TODO:  在此添加控件通知处理程序代码
-    ReadExcelFile();
+	ReadExcelFile();
+	TranslateTsFile();
 }
 
 void CReadWriteExcel_MFCDlg::OnClose()
@@ -300,9 +302,8 @@ void CReadWriteExcel_MFCDlg::ReadTsFile()
 
 void CReadWriteExcel_MFCDlg::DoTranslate()
 {
-
+	
 }
-
 
 int CReadWriteExcel_MFCDlg::GetColumnCount()
 {
@@ -396,4 +397,106 @@ void CReadWriteExcel_MFCDlg::PreLoadSheet()
     }
     ole_safe_array_.Clear();
     ole_safe_array_.Attach(ret_ary);
+}
+
+void CReadWriteExcel_MFCDlg::TranslateTsFile()
+{
+	//readTs file 
+	tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();
+	wstring  wstrPath = m_ResultFilePathName.GetString();
+	string strTsFile;
+	WStringToString(wstrPath, strTsFile);
+	tinyxml2::XMLError error = doc->LoadFile(strTsFile.c_str());
+	XMLElement* ele = doc->RootElement();
+	ele = ele->FirstChildElement("context");
+	while (ele != NULL)
+	{
+		XMLNode* firstEle = ele->FirstChild();
+		while (firstEle != NULL)
+		{
+			string strText = firstEle->ToElement()->Name();
+			if (strText == "message")
+			{
+				XMLElement* child = firstEle->FirstChildElement();
+				string strRawText;
+				string strTraslateText;
+				while (child != NULL)
+				{
+					if (string(child->Name()) == "source")
+					{
+						strRawText = child->GetText();
+						strTraslateText = TraslateRawData(strRawText);	
+					}
+					if (string(child->Name()) == "translation")
+					{
+						child->SetText(strTraslateText.c_str());
+					}
+					child = child->NextSiblingElement();
+				}	
+			}
+			firstEle = firstEle->NextSibling();
+		}
+		ele = ele->NextSiblingElement("context");
+	}
+	//修改完成后进行将修改保存
+	//doc->SetBOM(false);
+	doc->SaveFile(strTsFile.c_str());
+	//将文件设置为UTF8编码格式
+	ConvertTsFileToUTF8();
+}
+
+std::string CReadWriteExcel_MFCDlg::TraslateRawData(string strRawData)
+{
+	CString cstrRawData(strRawData.c_str());
+	wstring wstrRect;
+	string  strRect;
+	wstrRect = m_TranslateMap[cstrRawData].GetString();
+	WStringToString(wstrRect, strRect);
+	return strRect;
+}
+
+BOOL CReadWriteExcel_MFCDlg::WStringToString(const std::wstring &wstr, std::string &str)
+{
+	int nLen = (int)wstr.length();
+	DWORD num = WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)wstr.c_str(), -1, NULL, 0, NULL, 0);
+	str.resize(num, ' ');
+	int nResult = WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)wstr.c_str(), nLen, (LPSTR)str.c_str(), num, NULL, NULL);
+	if (nResult == 0)
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void CReadWriteExcel_MFCDlg::ConvertTsFileToUTF8()
+{
+   //读文件
+	ifstream fileText(m_ResultFilePathName.GetString());
+	string strAllText((std::istreambuf_iterator<char>(fileText)), std::istreambuf_iterator<char>());
+	string strUTF8 = string_To_UTF8(strAllText);
+	//写文件
+	ofstream out(m_ResultFilePathName.GetString());
+	if (out.is_open())
+	{
+		out.write(strUTF8.c_str(), strUTF8.length());
+		out.close();
+	}
+}
+
+std::string CReadWriteExcel_MFCDlg::string_To_UTF8(const std::string & str)
+{
+	int nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
+	wchar_t * pwBuf = new wchar_t[nwLen + 1];//一定要加1，不然会出现尾巴  
+	ZeroMemory(pwBuf, nwLen * 2 + 2);
+	::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf, nwLen);
+	int nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
+	char * pBuf = new char[nLen + 1];
+	ZeroMemory(pBuf, nLen + 1);
+	::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
+	std::string retStr(pBuf);
+	delete[]pwBuf;
+	delete[]pBuf;
+	pwBuf = NULL;
+	pBuf = NULL;
+	return retStr;
 }

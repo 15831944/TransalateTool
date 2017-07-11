@@ -16,6 +16,9 @@
     <Filter Include="头文件\excelReader">
       <UniqueIdentifier>{eaf680da-6409-4a1a-a514-08656fd4b2b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\tinyXml">
+      <UniqueIdentifier>{f1a52b5d-940e-4754-aae0-3f8dcee33b55}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -53,6 +56,9 @@
     </ClInclude>
     <ClInclude Include="excelReader\Worksheets.h">
       <Filter>头文件\excelReader</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyxml\tinyxml2.h">
+      <Filter>头文件\tinyXml</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
