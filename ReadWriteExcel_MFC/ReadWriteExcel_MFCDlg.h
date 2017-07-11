@@ -62,8 +62,7 @@ private:
 	string trim(string& s);
 	string getFileName(string strFilePath);
 	//获取当前解决方案中所有的ts文件并拷贝到一个特定的文件夹下
-	bool getAllProjectTsFile();
-
+    void find(wchar_t* lpPath, std::vector<std::string> &fileList,wchar_t* strFileType);
 
 private:
     CString m_SourceFilePathName;//存储翻译对应关系的excel文件
