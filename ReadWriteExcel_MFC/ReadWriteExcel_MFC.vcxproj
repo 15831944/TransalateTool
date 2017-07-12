@@ -109,6 +109,7 @@
     <ClInclude Include="excelReader\Workbooks.h" />
     <ClInclude Include="excelReader\Worksheet.h" />
     <ClInclude Include="excelReader\Worksheets.h" />
+    <ClInclude Include="InfoDiaglog.h" />
     <ClInclude Include="ReadWriteExcel_MFC.h" />
     <ClInclude Include="ReadWriteExcel_MFCDlg.h" />
     <ClInclude Include="Resource.h" />
@@ -117,6 +118,7 @@
     <ClInclude Include="tinyxml\tinyxml2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="InfoDiaglog.cpp" />
     <ClCompile Include="ReadWriteExcel_MFC.cpp" />
     <ClCompile Include="ReadWriteExcel_MFCDlg.cpp" />
     <ClCompile Include="stdafx.cpp">

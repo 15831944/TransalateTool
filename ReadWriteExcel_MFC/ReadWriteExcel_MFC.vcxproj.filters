@@ -60,6 +60,9 @@
     <ClInclude Include="tinyxml\tinyxml2.h">
       <Filter>头文件\tinyXml</Filter>
     </ClInclude>
+    <ClInclude Include="InfoDiaglog.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ReadWriteExcel_MFC.cpp">
@@ -69,6 +72,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="InfoDiaglog.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

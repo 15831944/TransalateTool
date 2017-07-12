@@ -7,10 +7,12 @@
 #include <fstream>
 #include <vector>
 #include <io.h>  
+#include <algorithm>  
 #include "ReadWriteExcel_MFC.h"
 #include "ReadWriteExcel_MFCDlg.h"
 #include "tinyxml2.h"
 #include "afxdialogex.h"
+#include "InfoDiaglog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -172,7 +174,7 @@ void CReadWriteExcel_MFCDlg::OnBnClickedFindsource()
     if (dlg.DoModal())
     {
         m_SourceFilePathName = dlg.GetPathName();
-        AfxMessageBox(m_SourceFilePathName);
+        //AfxMessageBox(m_SourceFilePathName);
     }
     //设置输入框控件的值
     GetDlgItem(IDC_SETTARGETPATH)->SetWindowText(m_SourceFilePathName);
@@ -190,7 +192,7 @@ void CReadWriteExcel_MFCDlg::OnBnClickedSetresultpath()
     if (dlg.DoModal())
     {
         m_ResultFilePathName = dlg.GetPathName();
-        AfxMessageBox(m_ResultFilePathName);
+       // AfxMessageBox(m_ResultFilePathName);
     }
     //设置输入框控件的值
     GetDlgItem(IDC_SETRESULTPATH_EDIT)->SetWindowText(m_ResultFilePathName);
@@ -201,6 +203,24 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
     // TODO:  在此添加控件通知处理程序代码
     ReadExcelFile();
     TranslateTsFile();
+	//保存没有翻译的文本
+	saveUnMatchFile();
+	int iCount = m_UnMatchMap.size();
+	wchar_t strInfo[255] = {0};
+	wsprintf(strInfo, L"Translate finish, total %d string not found in the excel file.", iCount);
+	CString strInfoText = strInfo;
+
+	//提示用户结果
+	//CInfoDiaglog* dlg = new CInfoDiaglog(this);
+	CInfoDiaglog *dlg = new CInfoDiaglog(this);
+	dlg->Create(IDD_INFO_DIAOG);
+	CWnd* wnd = FindWindow(NULL, _T("Info"));
+	::SendMessage(
+		*FindWindow(NULL, _T("Info"))//FindWInd(NULL,_T(***))通过窗口名返回窗口的句柄指针
+		, WM_UNMATCH_TEXT
+		, (WPARAM)&strInfoText
+		, (LPARAM)&m_UnMatchTextFilePath);//信息的地址
+	dlg->ShowWindow(SW_NORMAL);
 }
 
 void CReadWriteExcel_MFCDlg::OnClose()
@@ -303,6 +323,7 @@ void CReadWriteExcel_MFCDlg::ReadExcelFile()
         iIndex = strLanguageType.find_last_of("_");
         int iLastIndex = strLanguageType.find_last_of(".");
         strLanguageType = strLanguageType.substr(iIndex + 1, iLastIndex - iIndex - 1);
+		trim(strLanguageType);
         m_AllLanguageMap.insert(make_pair(strLanguageType, m_TranslateMap));
         //插入完成后清空当前map
         m_TranslateMap.clear();
@@ -425,6 +446,9 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
     vector<string>::iterator iter = m_AllTsFile.begin();
     for (; iter != m_AllTsFile.end(); ++iter)
     {
+		//设置当前正在处理ts文件的名字
+		m_CurrentHandleTsFile = getFileName(*iter).c_str();
+		m_CurrentHandleTsPath = (*iter).c_str();
         tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();
         tinyxml2::XMLError error = doc->LoadFile((*iter).c_str());
         XMLElement* ele = doc->RootElement();
@@ -444,8 +468,9 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
                     {
                         if (string(child->Name()) == "source")
                         {
-                            strRawText = child->GetText();
-                            strTraslateText = TraslateRawData(strRawText);
+                            strRawText = child->GetText();	
+							string strSuffix = getTsFileType(m_CurrentHandleTsFile.GetString());//
+							strTraslateText = TraslateRawData(strRawText, strSuffix);
                         }
                         if (string(child->Name()) == "translation")
                         {
@@ -459,19 +484,29 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
             ele = ele->NextSiblingElement("context");
         }
         //修改完成后进行将修改保存
-        //doc->SetBOM(false);
         doc->SaveFile((*iter).c_str());
         //将文件设置为UTF8编码格式
         ConvertTsFileToUTF8();
     }
 }
 
-std::string CReadWriteExcel_MFCDlg::TraslateRawData(string strRawData)
+std::string CReadWriteExcel_MFCDlg::TraslateRawData(string strRawData, string strType)
 {
+	//统一转换成小写
+	return "$$$$$$$$$$$$$$$$$$$$$$";
+	transform(strType.begin(), strType.end(), strType.begin(), ::tolower);
     CString cstrRawData(strRawData.c_str());
     wstring wstrRect;
     string  strRect;
-    wstrRect = m_TranslateMap[cstrRawData].GetString();
+	trim(strType);
+	map<CString,CString>  result =   m_AllLanguageMap[strType];
+	CString strText = result[cstrRawData];
+	wstrRect = m_AllLanguageMap[strType][cstrRawData].GetString();
+	if (wstrRect.empty())
+	{
+		m_UnMatchMap.insert(make_pair(cstrRawData, m_CurrentHandleTsFile));
+	}
+    //wstrRect = m_TranslateMap[cstrRawData].GetString();
     WStringToString(wstrRect, strRect);
     return strRect;
 }
@@ -492,11 +527,11 @@ BOOL CReadWriteExcel_MFCDlg::WStringToString(const std::wstring &wstr, std::stri
 void CReadWriteExcel_MFCDlg::ConvertTsFileToUTF8()
 {
     //读文件
-    ifstream fileText(m_ResultFilePathName.GetString());
+    ifstream fileText(m_CurrentHandleTsPath.GetString());
     string strAllText((std::istreambuf_iterator<char>(fileText)), std::istreambuf_iterator<char>());
     string strUTF8 = string_To_UTF8(strAllText);
     //写文件
-    ofstream out(m_ResultFilePathName.GetString());
+	ofstream out(m_CurrentHandleTsPath.GetString());
     if (out.is_open())
     {
         out.write(strUTF8.c_str(), strUTF8.length());
@@ -564,6 +599,15 @@ string CReadWriteExcel_MFCDlg::trim(string& s)
     return s.erase(0, s.find_first_not_of(drop));
 }
 
+std::wstring CReadWriteExcel_MFCDlg::trim(wstring& s)
+{
+	const wstring drop = L" ";
+	// trim right
+	s.erase(s.find_last_not_of(drop) + 1);
+	// trim left
+	return s.erase(0, s.find_first_not_of(drop));
+}
+
 std::string CReadWriteExcel_MFCDlg::getFileName(string strFilePath)
 {
     strFilePath = trim(strFilePath);
@@ -575,7 +619,7 @@ std::string CReadWriteExcel_MFCDlg::getFileName(string strFilePath)
 
 void CReadWriteExcel_MFCDlg::find(wchar_t* lpPath, std::vector<std::string> &fileList, wchar_t* strFileType)
 {
-    wchar_t szFind[MAX_PATH];
+	wchar_t szFind[MAX_PATH] = {0};
     WIN32_FIND_DATA FindFileData;
     wcscpy_s(szFind, wcslen(lpPath) + 1, lpPath);
     wcscat_s(szFind, MAX_PATH, L"\\*.*");
@@ -605,17 +649,63 @@ void CReadWriteExcel_MFCDlg::find(wchar_t* lpPath, std::vector<std::string> &fil
             string strFileName,strSuffix;
             WStringToString(wstrFileName, strFileName);
             int iIndex = strFileName.find_last_of(".");
-            strSuffix = strFileName.substr(iIndex, 3);
-            wchar_t buf[MAX_PATH];
-            if (strSuffix == ".ts")
-            {
-                swprintf_s(buf, MAX_PATH, L"%s", wstrFileName);
-                
-                fileList.push_back(strRecPath);
-            }
+			if (iIndex != string::npos)
+			{
+				strSuffix = strFileName.substr(iIndex);
+				trim(strSuffix);
+				TRACE("**********  file suffix begin  *******\n");
+				TRACE("the suffix is: %s\n",strSuffix.c_str());
+				TRACE("**********  file suffix end  *******\n");
+				std::cout << strSuffix.c_str() << endl;
+				wchar_t buf[MAX_PATH] = { 0 };
+				wmemcpy_s(buf, MAX_PATH, szFind, wcslen(szFind) + 2);
+				if (strSuffix.compare(".ts") == 0)
+				{					
+					//wmemcpy_s(buf, MAX_PATH, wstrFileName.c_str(), wcslen(wstrFileName.c_str()) + 2);
+					wstring wstrPath(buf);
+					int iIndex = wstrPath.find_last_of(L"\\");
+					wstrPath = wstrPath.substr(0, iIndex + 1);
+					//swprintf_s(wstrPath, wcslen(wstrPath.c_str()), L"\\%s", wstrFileName);
+					wstrPath.append(wstrFileName);
+					string strRecPath;
+					WStringToString(wstrPath, strRecPath);
+					fileList.push_back(strRecPath);
+				}
+			} 
         }
         if (!FindNextFile(hFind, &FindFileData))
             break;
     }
     FindClose(hFind);
+}
+
+void CReadWriteExcel_MFCDlg::saveUnMatchFile()
+{
+	m_UnMatchTextFilePath = L"d:\\infolog.txt";
+	multimap<CString, CString>::iterator iter = m_UnMatchMap.begin();
+	ofstream out(m_UnMatchTextFilePath);
+	for (; iter != m_UnMatchMap.end();++iter)
+	{
+		if (out.is_open())
+		{
+			TRACE("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$:   %s\n",((iter->first).GetString()));
+			TRACE("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$:   %s\n",((iter->second).GetString()));
+			string strKey,strValue;
+			WStringToString((iter->first).GetString(), strKey);
+			WStringToString((iter->second).GetString(), strValue);
+			out << strKey.c_str() << " *** " << strValue.c_str()<<endl;
+		}
+	}
+	out.close();
+}
+
+std::string CReadWriteExcel_MFCDlg::getTsFileType(wstring strFileName)
+{
+	int iUnderlineIndex = strFileName.find_last_of(L"_");
+	int iDotIndex = strFileName.find_last_of(L".");
+	wstring strFileType;
+	strFileType = strFileName.substr(iUnderlineIndex + 1, iDotIndex - iUnderlineIndex - 1);
+	string strRec;
+	WStringToString(strFileType, strRec);
+	return strRec;
 }
