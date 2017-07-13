@@ -312,6 +312,8 @@ void CReadWriteExcel_MFCDlg::ReadExcelFile()
                 if (j == 2)
                 {
                     strValue = GetCell(itera, j);
+					strKey = strKey.Trim();
+
                     m_TranslateMap.insert(make_pair(strKey, strValue));
                 }
             }
@@ -391,7 +393,7 @@ CString CReadWriteExcel_MFCDlg::GetCell(long iRow, long iColumn)
     }
 
     CString str;
-    if (vResult.vt == VT_BSTR)       //×Ö·û´®
+    if (vResult.vt == VT_BSTR)//×Ö·û´®
     {
         str = vResult.bstrVal;
     }
@@ -470,6 +472,8 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
                         {
                             strRawText = child->GetText();	
 							string strSuffix = getTsFileType(m_CurrentHandleTsFile.GetString());//
+							trim(strRawText);
+							trim(strSuffix);
 							strTraslateText = TraslateRawData(strRawText, strSuffix);
                         }
                         if (string(child->Name()) == "translation")
@@ -493,13 +497,22 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 std::string CReadWriteExcel_MFCDlg::TraslateRawData(string strRawData, string strType)
 {
 	//Í³Ò»×ª»»³ÉÐ¡Ð´
-	return "$$$$$$$$$$$$$$$$$$$$$$";
+	//return "$$$$$$$$$$$$$$$$$$$$$$";
 	transform(strType.begin(), strType.end(), strType.begin(), ::tolower);
     CString cstrRawData(strRawData.c_str());
     wstring wstrRect;
     string  strRect;
 	trim(strType);
 	map<CString,CString>  result =   m_AllLanguageMap[strType];
+	CString strInfo = cstrRawData;
+	strInfo.Append(L"%%%%%%%%%");
+	string watrInfo;
+	WStringToString(strInfo.GetString(), watrInfo);
+	TRACE("king*************is:%s\n", watrInfo.c_str());
+	cstrRawData = cstrRawData.Trim();
+	string watrInfoData;
+	WStringToString(cstrRawData.GetString(), watrInfoData);
+	TRACE("king*************is:%s\n", watrInfoData.c_str());
 	CString strText = result[cstrRawData];
 	wstrRect = m_AllLanguageMap[strType][cstrRawData].GetString();
 	if (wstrRect.empty())
@@ -693,7 +706,7 @@ void CReadWriteExcel_MFCDlg::saveUnMatchFile()
 			string strKey,strValue;
 			WStringToString((iter->first).GetString(), strKey);
 			WStringToString((iter->second).GetString(), strValue);
-			out << strKey.c_str() << " *** " << strValue.c_str()<<endl;
+			out << strKey.c_str() <<"***" << strValue.c_str()<<endl;
 		}
 	}
 	out.close();
