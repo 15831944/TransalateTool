@@ -201,7 +201,19 @@ void CReadWriteExcel_MFCDlg::OnBnClickedSetresultpath()
 void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
 {
     // TODO:  在此添加控件通知处理程序代码
+	//翻译前做判断，必选线选中excel 和ts所在路径
+	if (m_ResultFilePathName.IsEmpty() || m_SourceFilePathName.IsEmpty())
+	{
+		AfxMessageBox(L"please select excel path and ts file path first, my master!");
+		return;
+	}
     ReadExcelFile();
+	//判断是否查找到excel 文件
+	if (m_AllExcelFile.size() == 0)
+	{
+		AfxMessageBox(L"not find any excel file in the path, please check my master!");
+		return;
+	}
     TranslateTsFile();
 	//保存没有翻译的文本
 	saveUnMatchFile();
@@ -446,6 +458,11 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
     wstring strPathTmp = m_ResultFilePathName.GetString();
     find((wchar_t*)strPathTmp.c_str(), m_AllTsFile, L"\\*.ts");
     vector<string>::iterator iter = m_AllTsFile.begin();
+	if (m_AllTsFile.size() == 0)
+	{
+		AfxMessageBox(L"not find any ts file in the path, please check my master!");
+		return;
+	}
     for (; iter != m_AllTsFile.end(); ++iter)
     {
 		//设置当前正在处理ts文件的名字
@@ -476,10 +493,16 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 							trim(strSuffix);
 							strTraslateText = TraslateRawData(strRawText, strSuffix);
                         }
-                        if (string(child->Name()) == "translation")
+						if (string(child->Name()) == "translation" && !strTraslateText.empty())
                         {
                             child->SetText(strTraslateText.c_str());
+							//翻译成功后设置状态为已经翻译的状态
+							child->SetAttribute("type", "finished");
                         }
+						else
+						{
+							child->SetAttribute("type", "unfinished");
+						}
                         child = child->NextSiblingElement();
                     }
                 }
