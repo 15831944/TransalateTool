@@ -69,6 +69,8 @@ private:
 	//将没有匹配的字段写到文件中
 	void saveUnMatchFile();
 	string getTsFileType(wstring strFileName);
+	string ws2s(const std::wstring& wstr);
+	char* UnicodeToUtf8(const wchar_t* unicode);
 
 private:
     CString m_SourceFilePathName;//存储翻译对应关系的excel文件

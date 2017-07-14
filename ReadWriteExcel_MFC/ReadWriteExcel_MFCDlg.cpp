@@ -8,6 +8,8 @@
 #include <vector>
 #include <io.h>  
 #include <algorithm>  
+#include <locale>
+#include <codecvt>
 #include "ReadWriteExcel_MFC.h"
 #include "ReadWriteExcel_MFCDlg.h"
 #include "tinyxml2.h"
@@ -345,7 +347,7 @@ void CReadWriteExcel_MFCDlg::ReadExcelFile()
 		m_TranslateMap.clear();
 		//m_ExcelApp
 		m_ExcelApp.DetachDispatch();
-		m_ExcelApp.Quit();
+		//m_ExcelApp.Quit();
 		cout << "" << endl;
 	}
 }
@@ -474,7 +476,10 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 		tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();
 		tinyxml2::XMLError error = doc->LoadFile((*iter).c_str());
 		XMLElement* ele = doc->RootElement();
-		ele = ele->FirstChildElement("context");
+		if (ele != NULL)
+		{
+			ele = ele->FirstChildElement("context");
+		}	
 		while (ele != NULL)
 		{
 			XMLNode* firstEle = ele->FirstChild();
@@ -516,7 +521,7 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 		//修改完成后进行将修改保存
 		doc->SaveFile((*iter).c_str());
 		//将文件设置为UTF8编码格式
-		ConvertTsFileToUTF8();
+		//ConvertTsFileToUTF8();
 	}
 }
 
@@ -552,7 +557,11 @@ std::string CReadWriteExcel_MFCDlg::TraslateRawData(string strRawData, string st
 	}
 	//TRACE(L"king*************is:%s\n", wstrRect.c_str());
 	//wstrRect = m_TranslateMap[cstrRawData].GetString();
+	
+	//strRect = ws2s(wstrRect);
 	WStringToString(wstrRect, strRect);
+	strRect = UnicodeToUtf8(wstrRect.c_str());
+	//string_To_UTF8(strRect);
 	return strRect;
 }
 
@@ -761,4 +770,21 @@ std::string CReadWriteExcel_MFCDlg::getTsFileType(wstring strFileName)
 	string strRec;
 	WStringToString(strFileType, strRec);
 	return strRec;
+}
+
+string CReadWriteExcel_MFCDlg::ws2s(const std::wstring& wstr)
+{
+	using convert_typeX = std::codecvt_utf8 <wchar_t> ;
+	std::wstring_convert<convert_typeX, wchar_t> converterX;
+	return converterX.to_bytes(wstr);
+}
+
+char* CReadWriteExcel_MFCDlg::UnicodeToUtf8(const wchar_t* unicode)
+{
+	int len;
+	len = WideCharToMultiByte(CP_UTF8, 0, unicode, -1, NULL, 0, NULL, NULL);
+	char *szUtf8 = (char*)malloc(len + 1);
+	memset(szUtf8, 0, len + 1);
+	WideCharToMultiByte(CP_UTF8, 0, unicode, -1, szUtf8, len, NULL, NULL);
+	return szUtf8;
 }
