@@ -15,6 +15,7 @@
 #include "tinyxml2.h"
 #include "afxdialogex.h"
 #include "InfoDiaglog.h"
+#include "MyProgressCtrl.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -204,6 +205,14 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
 {
 	// TODO:  在此添加控件通知处理程序代码
 	//翻译前做判断，必选线选中excel 和ts所在路径
+    CMyProgressCtrl* progress = new CMyProgressCtrl();
+    progress->Create(WS_VISIBLE, CRect(100, 100, 250, 120), this, 99);
+    progress->SetRange(0, 100);
+    progress->SetPos(50);
+    //CProgressCtrl* progress =  new  CProgressCtrl();
+    //progress->Create(WS_VISIBLE, CRect(100,100,200,200), this, 99); //创建位置、大小
+    //progress->SetRange(0, 100);
+
 	if (m_ResultFilePathName.IsEmpty() || m_SourceFilePathName.IsEmpty())
 	{
 		AfxMessageBox(L"please select excel path and ts file path first, my master!");

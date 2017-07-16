@@ -54,12 +54,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\tinyxml</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\gdi+\Include;$(ProjectDir)\tinyxml</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)tinyxml</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)gdi+;$(ProjectDir)tinyxml</AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -110,6 +110,7 @@
     <ClInclude Include="excelReader\Worksheet.h" />
     <ClInclude Include="excelReader\Worksheets.h" />
     <ClInclude Include="InfoDiaglog.h" />
+    <ClInclude Include="MyProgressCtrl.h" />
     <ClInclude Include="ReadWriteExcel_MFC.h" />
     <ClInclude Include="ReadWriteExcel_MFCDlg.h" />
     <ClInclude Include="Resource.h" />
@@ -119,6 +120,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InfoDiaglog.cpp" />
+    <ClCompile Include="MyProgressCtrl.cpp" />
     <ClCompile Include="ReadWriteExcel_MFC.cpp" />
     <ClCompile Include="ReadWriteExcel_MFCDlg.cpp" />
     <ClCompile Include="stdafx.cpp">

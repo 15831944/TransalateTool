@@ -1,5 +1,5 @@
 // Machine generated IDispatch wrapper class(es) created with Add Class from Typelib Wizard
-#if 1
+#if 0
 #import "C:\\Program Files (x86)\\Common Files\\microsoft shared\\OFFICE14\\MSO.DLL" \
 	rename("RGB", "MSORGB") \
 	rename("DocumentProperties", "MSODocumentProperties")
@@ -14,7 +14,7 @@ using namespace VBIDE;
 	rename("ReplaceText", "ExcelReplaceText") \
 	no_auto_exclude
 using namespace Excel;
-#else if 0
+#else if 1
 
 #import "C:\\Program Files (x86)\\Common Files\\Microsoft Shared\\OFFICE12\\MSO.DLL" \
 	rename("RGB", "MSORGB") \

@@ -19,6 +19,12 @@
     <Filter Include="头文件\tinyXml">
       <UniqueIdentifier>{f1a52b5d-940e-4754-aae0-3f8dcee33b55}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\progressBar">
+      <UniqueIdentifier>{caa65fc0-90aa-4530-a9c4-20d7b046f4c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\progressBar">
+      <UniqueIdentifier>{afa98274-159f-4d66-9564-1abf0e31b545}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -63,6 +69,9 @@
     <ClInclude Include="InfoDiaglog.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MyProgressCtrl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ReadWriteExcel_MFC.cpp">
@@ -75,6 +84,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="InfoDiaglog.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MyProgressCtrl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

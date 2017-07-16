@@ -66,3 +66,8 @@
 //	rename("ReplaceText", "ExcelReplaceText") \
 //	no_auto_exclude
 //using namespace Excel;
+
+//使用gdi+处理gif图片
+#include <gdiplus.h>
+using namespace Gdiplus;
+#pragma comment(lib, "gdiplus.lib")
