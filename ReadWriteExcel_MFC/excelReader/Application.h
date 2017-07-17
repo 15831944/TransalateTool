@@ -1,38 +1,4 @@
 // Machine generated IDispatch wrapper class(es) created with Add Class from Typelib Wizard
-#if 0
-#import "C:\\Program Files (x86)\\Common Files\\microsoft shared\\OFFICE14\\MSO.DLL" \
-	rename("RGB", "MSORGB") \
-	rename("DocumentProperties", "MSODocumentProperties")
-using namespace Office;
-#import "C:\\Program Files (x86)\\Common Files\\microsoft shared\\VBA\\VBA6\\VBE6EXT.OLB"
-
-using namespace VBIDE;
-#import "C:\\Program Files (x86)\\Microsoft Office\\Office14\\EXCEL.EXE" \
-	rename("DialogBox", "ExcelDialogBox") \
-	rename("RGB", "ExcelRGB") \
-	rename("CopyFile", "ExcelCopyFile") \
-	rename("ReplaceText", "ExcelReplaceText") \
-	no_auto_exclude
-using namespace Excel;
-#else if 1
-
-#import "C:\\Program Files (x86)\\Common Files\\Microsoft Shared\\OFFICE12\\MSO.DLL" \
-	rename("RGB", "MSORGB") \
-	rename("DocumentProperties", "MSODocumentProperties")
-using namespace Office;
-#import "C:\\Program Files (x86)\\Common Files\\Microsoft Shared\\VBA\VBA6\\VBE6EXT.OLB"
-
-using namespace VBIDE;
-#import "E:\\Program Files (x86)\\Microsoft Office\\Office12\\EXCEL.EXE" \
-	rename("DialogBox", "ExcelDialogBox") \
-	rename("RGB", "ExcelRGB") \
-	rename("CopyFile", "ExcelCopyFile") \
-	rename("ReplaceText", "ExcelReplaceText") \
-	no_auto_exclude
-using namespace Excel;
-#endif
-
-
 // CApplication wrapper class
 
 class CApplication : public COleDispatchDriver

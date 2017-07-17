@@ -54,7 +54,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\gdi+\Include;$(ProjectDir)\tinyxml</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\gifHelper;$(ProjectDir)\gdi+\Include;$(ProjectDir)\tinyxml</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -119,6 +119,7 @@
     <ClInclude Include="tinyxml\tinyxml2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="gifHelper\PictureEx.cpp" />
     <ClCompile Include="InfoDiaglog.cpp" />
     <ClCompile Include="MyProgressCtrl.cpp" />
     <ClCompile Include="ReadWriteExcel_MFC.cpp" />
@@ -132,9 +133,12 @@
     <ResourceCompile Include="ReadWriteExcel_MFC.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\gif1.bin" />
+    <None Include="res\gif2.bin" />
     <None Include="res\ReadWriteExcel_MFC.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\progress.gif" />
     <Image Include="res\ReadWriteExcel_MFC.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

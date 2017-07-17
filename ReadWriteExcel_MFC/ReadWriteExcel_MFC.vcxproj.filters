@@ -70,7 +70,7 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="MyProgressCtrl.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\progressBar</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +87,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="MyProgressCtrl.cpp">
+      <Filter>源文件\progressBar</Filter>
+    </ClCompile>
+    <ClCompile Include="gifHelper\PictureEx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -99,9 +102,18 @@
     <None Include="res\ReadWriteExcel_MFC.rc2">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="res\gif1.bin">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="res\gif2.bin">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\ReadWriteExcel_MFC.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\progress.gif">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

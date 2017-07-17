@@ -1,5 +1,8 @@
 #pragma once
 #include "afxcmn.h"
+
+class ImageManager;
+class CPictureEx;
 class CMyProgressCtrl :
     public CProgressCtrl
 {
@@ -23,10 +26,11 @@ private:
     int  m_iPos;    //当前的进度
     int  m_nBarWidth;  //进度条宽度
     CString m_strText;//当前进度值
-
-
+	//ImageManager* gifManager;   //gif图片处理类
+	CPictureEx*  m_gifHelper;
 public:
     DECLARE_MESSAGE_MAP()
     afx_msg void OnPaint();
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 };
 

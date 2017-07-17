@@ -10,12 +10,14 @@
 #include <algorithm>  
 #include <locale>
 #include <codecvt>
+#include "Resource.h"
 #include "ReadWriteExcel_MFC.h"
 #include "ReadWriteExcel_MFCDlg.h"
 #include "tinyxml2.h"
 #include "afxdialogex.h"
 #include "InfoDiaglog.h"
 #include "MyProgressCtrl.h"
+//#include "ImageEx.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -25,7 +27,16 @@ using namespace  std;
 using namespace tinyxml2;
 #pragma comment(lib,"tinyxml2.lib")
 
+
+//使用gdi+处理gif图片
+#include <gdiplus.h>
+using namespace Gdiplus;
+#pragma comment(lib, "gdiplus.lib")
+
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
+
+#define PROGRESS_GIF   0
+#define PROGRESS_VALUE 1
 
 class CAboutDlg : public CDialogEx
 {
@@ -205,14 +216,22 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
 {
 	// TODO:  在此添加控件通知处理程序代码
 	//翻译前做判断，必选线选中excel 和ts所在路径
-    CMyProgressCtrl* progress = new CMyProgressCtrl();
-    progress->Create(WS_VISIBLE, CRect(100, 100, 250, 120), this, 99);
-    progress->SetRange(0, 100);
-    progress->SetPos(50);
+    //CMyProgressCtrl* progress = new CMyProgressCtrl();
+    //progress->Create(WS_VISIBLE, CRect(100, 100, 250, 120), this, 99);
+    //progress->SetRange(0, 100);
+    //progress->SetPos(50);
     //CProgressCtrl* progress =  new  CProgressCtrl();
     //progress->Create(WS_VISIBLE, CRect(100,100,200,200), this, 99); //创建位置、大小
     //progress->SetRange(0, 100);
+	////////////////////////////////////////////////////////////////////////
+	progress = new CMyProgressCtrl();
+	progress->Create(WS_VISIBLE, CRect(100, 100, 300, 120), this, 99);
+	progress->SetRange(0, 100);
+	progress->SetPos(0);
+	//gifManager->AddGifImage(PROGRESS_GIF, PROGRESS_VALUE);
 
+
+	//////////////////////////////////////////////////////////////////////////
 	if (m_ResultFilePathName.IsEmpty() || m_SourceFilePathName.IsEmpty())
 	{
 		AfxMessageBox(L"please select excel path and ts file path first, my master!");
@@ -480,6 +499,10 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 	for (; iter != m_AllTsFile.end(); ++iter)
 	{
 		//设置当前正在处理ts文件的名字
+		//设置进度条的进度
+		iter - m_AllTsFile.begin();
+		int iSize = (iter - m_AllTsFile.begin()) / m_AllTsFile.size()*100;
+		progress->SetPos(iSize);
 		m_CurrentHandleTsFile = getFileName(*iter).c_str();
 		m_CurrentHandleTsPath = (*iter).c_str();
 		tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();

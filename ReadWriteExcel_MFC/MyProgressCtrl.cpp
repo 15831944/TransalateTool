@@ -1,5 +1,10 @@
 #include "stdafx.h"
+//#include "ImageEx.h"
+#include "Resource.h"
+#include "gifHelper/PictureEx.h"
 #include "MyProgressCtrl.h"
+
+
 
 
 CMyProgressCtrl::CMyProgressCtrl()
@@ -43,11 +48,18 @@ void CMyProgressCtrl::initData()
     m_prgsColor = RGB(0,0,255);
     m_prgsTextColor = RGB(255,0,0);
     m_freeTextColor = RGB(0,255,0);
-    m_ProgressGif.Load(L"F:\\择善培训\\学习计划\\我的项目\\Translatetools\\TransalateTool\\ReadWriteExcel_MFC\\res\\progress.gif");
+	m_gifHelper = new CPictureEx();
+	//BOOL bRec = m_gifHelper->Create(NULL, WS_CHILD | WS_VISIBLE | SS_CENTER,
+	//	CRect(10, 10, 150, 30), this);
+	// DWORD dRec = GetLastError();
+	//int a = 0;
+	//gifManager->AddGifImage(0, IDR_GIF);
+ //   m_ProgressGif.Load(L"F:\\择善培训\\学习计划\\我的项目\\Translatetools\\TransalateTool\\ReadWriteExcel_MFC\\res\\progress.gif");
 }
 
 BEGIN_MESSAGE_MAP(CMyProgressCtrl, CProgressCtrl)
     ON_WM_PAINT()
+	ON_WM_CREATE()
 END_MESSAGE_MAP()
 
 
@@ -63,17 +75,15 @@ void CMyProgressCtrl::OnPaint()
     //绘制进度条的完成部分
     LeftRect.right = LeftRect.left + (int)((LeftRect.right - LeftRect.left)*dFraction);
     //绘制Gif图片
-    m_ProgressGif.Draw(dc, LeftRect);
-
-
     //dc.FillSolidRect(LeftRect, m_prgsColor);
+	int iWidth = dFraction* (m_iMax - m_iMin);
+	m_gifHelper->SetPaintRect(CRect(0, 0, iWidth, 20));
     //绘制剩余部分
     RightRect.left = LeftRect.right;
     dc.FillSolidRect(RightRect, m_freeColor);
     //绘制文本
     m_strText.Format(_T("%d%%"), (int)(dFraction*100.00));
     dc.SetBkMode(TRANSPARENT);
-
     CRgn rgn;
     rgn.CreateRectRgn(LeftRect.left, LeftRect.top, LeftRect.right, LeftRect.bottom);
     dc.SelectClipRgn(&rgn);
@@ -87,3 +97,15 @@ void CMyProgressCtrl::OnPaint()
     dc.DrawText(m_strText, ClientRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 }
 
+int CMyProgressCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	if (CProgressCtrl::OnCreate(lpCreateStruct) == -1)
+		return -1;
+	// TODO:  在此添加您专用的创建代码
+	BOOL bRec = m_gifHelper->Create(NULL, WS_VISIBLE | SS_CENTER,
+		CRect(0, 0, 0, 20), this);
+	DWORD dRec = GetLastError();
+	m_gifHelper->Load(MAKEINTRESOURCE(IDR_GIF), _T("Gif"));
+	m_gifHelper->Draw();
+	return 0;
+}

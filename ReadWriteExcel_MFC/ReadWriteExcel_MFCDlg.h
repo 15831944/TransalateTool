@@ -13,6 +13,7 @@
 #include ".\excelReader\Worksheet.h"
 #include ".\excelReader\Range.h"
 using namespace std;
+class CMyProgressCtrl;
 
 #define WM_UNMATCH_TEXT (WM_USER+100)
 
@@ -93,4 +94,5 @@ private:
 	CString        m_CurrentHandleTsFile;//当前正在处理的ts文件名
 	CString        m_UnMatchTextFilePath;//保存未匹配到的字符串的文件路径
 	CString        m_CurrentHandleTsPath;//当前正在被处理的Ts的文件的路径
+	CMyProgressCtrl* progress;
 };

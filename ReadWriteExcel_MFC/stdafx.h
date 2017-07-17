@@ -35,12 +35,6 @@
 
 
 
-
-
-
-
-
-
 #ifdef _UNICODE
 #if defined _M_IX86
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
@@ -66,6 +60,43 @@
 //	rename("ReplaceText", "ExcelReplaceText") \
 //	no_auto_exclude
 //using namespace Excel;
+
+
+
+
+#if 1
+#import "C:\\Program Files (x86)\\Common Files\\microsoft shared\\OFFICE14\\MSO.DLL" \
+	rename("RGB", "MSORGB") \
+	rename("DocumentProperties", "MSODocumentProperties")
+using namespace Office;
+#import "C:\\Program Files (x86)\\Common Files\\microsoft shared\\VBA\\VBA6\\VBE6EXT.OLB"
+
+using namespace VBIDE;
+#import "C:\\Program Files (x86)\\Microsoft Office\\Office14\\EXCEL.EXE" \
+	rename("DialogBox", "ExcelDialogBox") \
+	rename("RGB", "ExcelRGB") \
+	rename("CopyFile", "ExcelCopyFile") \
+	rename("ReplaceText", "ExcelReplaceText") \
+	no_auto_exclude
+using namespace Excel;
+#else if 0
+
+#import "C:\\Program Files (x86)\\Common Files\\Microsoft Shared\\OFFICE12\\MSO.DLL" \
+	rename("RGB", "MSORGB") \
+	rename("DocumentProperties", "MSODocumentProperties")
+using namespace Office;
+#import "C:\\Program Files (x86)\\Common Files\\Microsoft Shared\\VBA\VBA6\\VBE6EXT.OLB"
+
+using namespace VBIDE;
+#import "E:\\Program Files (x86)\\Microsoft Office\\Office12\\EXCEL.EXE" \
+	rename("DialogBox", "ExcelDialogBox") \
+	rename("RGB", "ExcelRGB") \
+	rename("CopyFile", "ExcelCopyFile") \
+	rename("ReplaceText", "ExcelReplaceText") \
+	no_auto_exclude
+using namespace Excel;
+#endif
+
 
 //使用gdi+处理gif图片
 #include <gdiplus.h>
