@@ -225,12 +225,11 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
     //progress->SetRange(0, 100);
 	////////////////////////////////////////////////////////////////////////
 	progress = new CMyProgressCtrl();
-	progress->Create(WS_VISIBLE, CRect(100, 100, 300, 120), this, 99);
+	progress->Create(WS_VISIBLE, CRect(100, 100, 290, 114), this, 99);
 	progress->SetRange(0, 100);
-	progress->SetPos(0);
+	progress->ShowWindow(SW_HIDE);
+	
 	//gifManager->AddGifImage(PROGRESS_GIF, PROGRESS_VALUE);
-
-
 	//////////////////////////////////////////////////////////////////////////
 	if (m_ResultFilePathName.IsEmpty() || m_SourceFilePathName.IsEmpty())
 	{
@@ -496,12 +495,13 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 		AfxMessageBox(L"not find any ts file in the path, please check my master!");
 		return;
 	}
+	progress->ShowWindow(SW_SHOW);
 	for (; iter != m_AllTsFile.end(); ++iter)
 	{
 		//设置当前正在处理ts文件的名字
 		//设置进度条的进度
 		iter - m_AllTsFile.begin();
-		int iSize = (iter - m_AllTsFile.begin()) / m_AllTsFile.size()*100;
+		int iSize = ((float)(iter - m_AllTsFile.begin() + 1) / (float)m_AllTsFile.size()) * 100.00;
 		progress->SetPos(iSize);
 		m_CurrentHandleTsFile = getFileName(*iter).c_str();
 		m_CurrentHandleTsPath = (*iter).c_str();
@@ -555,6 +555,10 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 		//将文件设置为UTF8编码格式
 		//ConvertTsFileToUTF8();
 	}
+	//翻译完成后，隐藏进度条控件
+	progress->ShowWindow(SW_HIDE);
+	//禁用翻译按钮
+	GetDlgItem(ID_TRANSLATE)->EnableWindow(FALSE);
 }
 
 std::string CReadWriteExcel_MFCDlg::TraslateRawData(string strRawData, string strType)

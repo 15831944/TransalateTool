@@ -31,6 +31,8 @@ int CMyProgressCtrl::SetPos(int nPos)
     {
         m_iPos = nPos;
     }
+	Invalidate();
+	UpdateWindow();
     return m_iPos;
 }
 
@@ -73,10 +75,11 @@ void CMyProgressCtrl::OnPaint()
     LeftRect = RightRect = ClientRect;
     double dFraction = (double)(m_iPos - m_iMin) / ((double)(m_iMax - m_iMin));
     //绘制进度条的完成部分
-    LeftRect.right = LeftRect.left + (int)((LeftRect.right - LeftRect.left)*dFraction);
+    LeftRect.right = LeftRect.left + (int)((LeftRect.right - LeftRect.left) * dFraction);
     //绘制Gif图片
     //dc.FillSolidRect(LeftRect, m_prgsColor);
-	int iWidth = dFraction* (m_iMax - m_iMin);
+	int iTotalWidth = ClientRect.right - ClientRect.left;
+	int iWidth = dFraction* iTotalWidth;
 	m_gifHelper->SetPaintRect(CRect(0, 0, iWidth, 20));
     //绘制剩余部分
     RightRect.left = LeftRect.right;
@@ -103,7 +106,7 @@ int CMyProgressCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 	// TODO:  在此添加您专用的创建代码
 	BOOL bRec = m_gifHelper->Create(NULL, WS_VISIBLE | SS_CENTER,
-		CRect(0, 0, 0, 20), this);
+		CRect(0, 0, 0, 0), this);
 	DWORD dRec = GetLastError();
 	m_gifHelper->Load(MAKEINTRESOURCE(IDR_GIF), _T("Gif"));
 	m_gifHelper->Draw();
