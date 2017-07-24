@@ -72,6 +72,8 @@ private:
 	string getTsFileType(wstring strFileName);
 	string ws2s(const std::wstring& wstr);
 	char* UnicodeToUtf8(const wchar_t* unicode);
+	//初始化成员变量
+	void initData();
 
 private:
     CString m_SourceFilePathName;//存储翻译对应关系的excel文件
@@ -94,5 +96,11 @@ private:
 	CString        m_CurrentHandleTsFile;//当前正在处理的ts文件名
 	CString        m_UnMatchTextFilePath;//保存未匹配到的字符串的文件路径
 	CString        m_CurrentHandleTsPath;//当前正在被处理的Ts的文件的路径
+	CString        m_FilterValue;       //过滤器的值用户过滤特定的ts文件
+	list<CString> m_AllFilter;         //当前支持的过滤参数
 	CMyProgressCtrl* progress;
+	bool             m_IsReOpenExcelFile; //是否重新打开excel文件
+	bool             m_ISReoOpenTsFile; //是否重新打开Ts文件
+public:
+	afx_msg void OnChangeFilterbox();
 };

@@ -75,6 +75,7 @@ CReadWriteExcel_MFCDlg::CReadWriteExcel_MFCDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CReadWriteExcel_MFCDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	initData();
 }
 
 void CReadWriteExcel_MFCDlg::DoDataExchange(CDataExchange* pDX)
@@ -90,6 +91,7 @@ BEGIN_MESSAGE_MAP(CReadWriteExcel_MFCDlg, CDialogEx)
 	ON_BN_CLICKED(ID_SETRESULTPATH, &CReadWriteExcel_MFCDlg::OnBnClickedSetresultpath)
 	ON_BN_CLICKED(ID_TRANSLATE, &CReadWriteExcel_MFCDlg::OnBnClickedTranslate)
 	ON_WM_CLOSE()
+	ON_EN_CHANGE(IDC_FILTERBOX, &CReadWriteExcel_MFCDlg::OnChangeFilterbox)
 END_MESSAGE_MAP()
 
 // CReadWriteExcel_MFCDlg 消息处理程序
@@ -187,9 +189,16 @@ void CReadWriteExcel_MFCDlg::OnBnClickedFindsource()
 	CFolderPickerDialog dlg(workingDirectory, 0, NULL, 0);
 	if (dlg.DoModal())
 	{
+		if (dlg.GetPathName().CompareNoCase(m_SourceFilePathName))
+		{
+            //如果用户重新设置了excel路径允许用户再次翻译
+			GetDlgItem(ID_TRANSLATE)->EnableWindow(TRUE);
+			m_IsReOpenExcelFile = true;
+		}
 		m_SourceFilePathName = dlg.GetPathName();
 		//AfxMessageBox(m_SourceFilePathName);
 	}
+
 	//设置输入框控件的值
 	GetDlgItem(IDC_SETTARGETPATH)->SetWindowText(m_SourceFilePathName);
 }
@@ -205,6 +214,12 @@ void CReadWriteExcel_MFCDlg::OnBnClickedSetresultpath()
 	CFolderPickerDialog dlg(workingDirectory, 0, NULL, 0);
 	if (dlg.DoModal())
 	{
+		if (dlg.GetPathName().CompareNoCase(m_ResultFilePathName))
+		{
+			//如果用户重新设置了excel路径允许用户再次翻译
+			m_ISReoOpenTsFile = true;
+			GetDlgItem(ID_TRANSLATE)->EnableWindow(TRUE);
+		}
 		m_ResultFilePathName = dlg.GetPathName();
 		// AfxMessageBox(m_ResultFilePathName);
 	}
@@ -225,7 +240,7 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
     //progress->SetRange(0, 100);
 	////////////////////////////////////////////////////////////////////////
 	progress = new CMyProgressCtrl();
-	progress->Create(WS_VISIBLE|WS_CHILD, CRect(100, 200, 290, 214), this, 99);
+	progress->Create(WS_VISIBLE|WS_CHILD, CRect(100, 235, 290, 214), this, 99);
 
 	progress->SetRange(0, 100);
 	progress->ShowWindow(SW_HIDE);
@@ -242,6 +257,16 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
 	if (m_AllExcelFile.size() == 0)
 	{
 		AfxMessageBox(L"not find any excel file in the path, please check my master!");
+		return;
+	}
+	//判断当前的过滤器是否设置正确
+	GetDlgItemText(IDC_FILTERBOX, m_FilterValue);
+	m_FilterValue.Trim();
+	list<CString>::iterator iter;
+	iter = ::find(m_AllFilter.begin(), m_AllFilter.end(), m_FilterValue);
+	if (iter == m_AllFilter.end() && !m_FilterValue.IsEmpty())
+	{
+		AfxMessageBox(L"filter setting is not correct , please reInput!");
 		return;
 	}
 	TranslateTsFile();
@@ -278,6 +303,10 @@ void CReadWriteExcel_MFCDlg::OnClose()
 void CReadWriteExcel_MFCDlg::ReadExcelFile()
 {
 	//遍历所有的excel文件
+	if (!m_IsReOpenExcelFile)
+	{
+		return;
+	}
 	string strSourceFilePath;
 	WStringToString(m_SourceFilePathName.GetString(), strSourceFilePath);
 	GetAllFormatFiles(strSourceFilePath, m_AllExcelFile, ".xlsx");
@@ -378,6 +407,8 @@ void CReadWriteExcel_MFCDlg::ReadExcelFile()
 		//m_ExcelApp.Quit();
 		cout << "" << endl;
 	}
+	//打开excel文件后重置标志位
+	m_IsReOpenExcelFile = false;
 }
 
 void CReadWriteExcel_MFCDlg::ReadTsFile()
@@ -489,7 +520,11 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 {
 	//readTs file
 	wstring strPathTmp = m_ResultFilePathName.GetString();
-	find((wchar_t*)strPathTmp.c_str(), m_AllTsFile, L"\\*.ts");
+	if (m_ISReoOpenTsFile)
+	{
+		find((wchar_t*)strPathTmp.c_str(), m_AllTsFile, L"\\*.ts");
+		m_ISReoOpenTsFile = false;
+	}
 	vector<string>::iterator iter = m_AllTsFile.begin();
 	if (m_AllTsFile.size() == 0)
 	{
@@ -501,11 +536,22 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 	{
 		//设置当前正在处理ts文件的名字
 		//设置进度条的进度
+		//做过滤设置
 		iter - m_AllTsFile.begin();
 		int iSize = ((float)(iter - m_AllTsFile.begin() + 1) / (float)m_AllTsFile.size()) * 100.00;
 		progress->SetPos(iSize);
 		m_CurrentHandleTsFile = getFileName(*iter).c_str();
+		string  strLangugeType = getFileName(*iter).c_str();
 		m_CurrentHandleTsPath = (*iter).c_str();
+		int iIndexUnderline = strLangugeType.find_last_of("_");
+		int iDotPos = strLangugeType.find_last_of(".");
+		strLangugeType = strLangugeType.substr(iIndexUnderline + 1, iDotPos - iIndexUnderline - 1);
+		CString strTmp(strLangugeType.c_str());
+		if (!m_FilterValue.IsEmpty() && strTmp.CompareNoCase(m_FilterValue) != 0)
+		{
+			continue;
+		}
+		MessageBox(m_FilterValue);
 		tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();
 		tinyxml2::XMLError error = doc->LoadFile((*iter).c_str());
 		XMLElement* ele = doc->RootElement();
@@ -824,4 +870,31 @@ char* CReadWriteExcel_MFCDlg::UnicodeToUtf8(const wchar_t* unicode)
 	memset(szUtf8, 0, len + 1);
 	WideCharToMultiByte(CP_UTF8, 0, unicode, -1, szUtf8, len, NULL, NULL);
 	return szUtf8;
+}
+
+void CReadWriteExcel_MFCDlg::initData()
+{
+	m_FilterValue = "";
+	CString strTmp[7] = {L"ch",L"de",L"en",L"es",L"fr",L"it",L"pt"};
+	m_AllFilter.insert(m_AllFilter.begin(),&strTmp[0], &strTmp[6] + 1);
+	m_IsReOpenExcelFile = false;
+	m_ISReoOpenTsFile = false;
+}
+
+
+void CReadWriteExcel_MFCDlg::OnChangeFilterbox()
+{
+	// TODO:  如果该控件是 RICHEDIT 控件，它将不
+	// 发送此通知，除非重写 CDialogEx::OnInitDialog()
+	// 函数并调用 CRichEditCtrl().SetEventMask()，
+	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
+
+	// TODO:  在此添加控件通知处理程序代码
+	CString strCurValue;
+	GetDlgItemText(IDC_FILTERBOX, strCurValue);
+	strCurValue.Trim();
+	if (strCurValue.CompareNoCase(m_FilterValue) != 0)
+	{
+		GetDlgItem(ID_TRANSLATE)->EnableWindow(TRUE);
+	}
 }
