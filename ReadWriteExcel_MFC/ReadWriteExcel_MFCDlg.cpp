@@ -225,7 +225,8 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
     //progress->SetRange(0, 100);
 	////////////////////////////////////////////////////////////////////////
 	progress = new CMyProgressCtrl();
-	progress->Create(WS_VISIBLE, CRect(100, 100, 290, 114), this, 99);
+	progress->Create(WS_VISIBLE|WS_CHILD, CRect(100, 200, 290, 214), this, 99);
+
 	progress->SetRange(0, 100);
 	progress->ShowWindow(SW_HIDE);
 	

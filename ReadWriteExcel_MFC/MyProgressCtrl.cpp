@@ -56,7 +56,6 @@ void CMyProgressCtrl::initData()
 	// DWORD dRec = GetLastError();
 	//int a = 0;
 	//gifManager->AddGifImage(0, IDR_GIF);
- //   m_ProgressGif.Load(L"F:\\择善培训\\学习计划\\我的项目\\Translatetools\\TransalateTool\\ReadWriteExcel_MFC\\res\\progress.gif");
 }
 
 BEGIN_MESSAGE_MAP(CMyProgressCtrl, CProgressCtrl)
@@ -92,12 +91,12 @@ void CMyProgressCtrl::OnPaint()
     dc.SelectClipRgn(&rgn);
     dc.SetTextColor(m_prgsTextColor);
     dc.DrawText(m_strText, ClientRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-
     rgn.DeleteObject();
     rgn.CreateRectRgn(RightRect.left, RightRect.top, RightRect.right, RightRect.bottom);
     dc.SelectClipRgn(&rgn);
     dc.SetTextColor(m_freeTextColor);
     dc.DrawText(m_strText, ClientRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+	rgn.DeleteObject();
 }
 
 int CMyProgressCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)

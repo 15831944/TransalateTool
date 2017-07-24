@@ -14,7 +14,6 @@ public:
     void setText(CString strText){ m_strText = strText; };
     void initData();
 
-
 private:
     CImage m_ProgressGif; //显示已经处理完成部分的gif图片
     COLORREF m_prgsColor; //进度条进度部分颜色
