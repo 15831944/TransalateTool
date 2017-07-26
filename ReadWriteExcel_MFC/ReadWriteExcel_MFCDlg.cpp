@@ -38,6 +38,9 @@ using namespace Gdiplus;
 #define PROGRESS_GIF   0
 #define PROGRESS_VALUE 1
 
+
+
+
 class CAboutDlg : public CDialogEx
 {
 public:
@@ -81,6 +84,8 @@ CReadWriteExcel_MFCDlg::CReadWriteExcel_MFCDlg(CWnd* pParent /*=NULL*/)
 void CReadWriteExcel_MFCDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_SOURCETEXT, m_SourcePathText);
+	DDX_Control(pDX, ID_RESULTPATHTEXT, m_ResultPathText);
 }
 
 BEGIN_MESSAGE_MAP(CReadWriteExcel_MFCDlg, CDialogEx)
@@ -92,6 +97,7 @@ BEGIN_MESSAGE_MAP(CReadWriteExcel_MFCDlg, CDialogEx)
 	ON_BN_CLICKED(ID_TRANSLATE, &CReadWriteExcel_MFCDlg::OnBnClickedTranslate)
 	ON_WM_CLOSE()
 	ON_EN_CHANGE(IDC_FILTERBOX, &CReadWriteExcel_MFCDlg::OnChangeFilterbox)
+	ON_CBN_SELCHANGE(IDC_TYPE_COMBO, &CReadWriteExcel_MFCDlg::OnSelchangeTypeCombo)
 END_MESSAGE_MAP()
 
 // CReadWriteExcel_MFCDlg 消息处理程序
@@ -126,7 +132,9 @@ BOOL CReadWriteExcel_MFCDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO:  在此添加额外的初始化代码
-
+	//初始化combobox
+	initUI();
+	//m_ExtractorButton->SetWindowTextW(L"11");
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -191,9 +199,10 @@ void CReadWriteExcel_MFCDlg::OnBnClickedFindsource()
 	{
 		if (dlg.GetPathName().CompareNoCase(m_SourceFilePathName))
 		{
-            //如果用户重新设置了excel路径允许用户再次翻译
+			//如果用户重新设置了excel路径允许用户再次翻译
 			GetDlgItem(ID_TRANSLATE)->EnableWindow(TRUE);
 			m_IsReOpenExcelFile = true;
+			m_IsExtrcted = false;
 		}
 		m_SourceFilePathName = dlg.GetPathName();
 		//AfxMessageBox(m_SourceFilePathName);
@@ -218,6 +227,8 @@ void CReadWriteExcel_MFCDlg::OnBnClickedSetresultpath()
 		{
 			//如果用户重新设置了excel路径允许用户再次翻译
 			m_ISReoOpenTsFile = true;
+			//如果重新设置了ts文件，则能够重新提取
+			m_IsExtrcted = false;
 			GetDlgItem(ID_TRANSLATE)->EnableWindow(TRUE);
 		}
 		m_ResultFilePathName = dlg.GetPathName();
@@ -231,33 +242,35 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
 {
 	// TODO:  在此添加控件通知处理程序代码
 	//翻译前做判断，必选线选中excel 和ts所在路径
-    //CMyProgressCtrl* progress = new CMyProgressCtrl();
-    //progress->Create(WS_VISIBLE, CRect(100, 100, 250, 120), this, 99);
-    //progress->SetRange(0, 100);
-    //progress->SetPos(50);
-    //CProgressCtrl* progress =  new  CProgressCtrl();
-    //progress->Create(WS_VISIBLE, CRect(100,100,200,200), this, 99); //创建位置、大小
-    //progress->SetRange(0, 100);
+	//CMyProgressCtrl* progress = new CMyProgressCtrl();
+	//progress->Create(WS_VISIBLE, CRect(100, 100, 250, 120), this, 99);
+	//progress->SetRange(0, 100);
+	//progress->SetPos(50);
+	//CProgressCtrl* progress =  new  CProgressCtrl();
+	//progress->Create(WS_VISIBLE, CRect(100,100,200,200), this, 99); //创建位置、大小
+	//progress->SetRange(0, 100);
 	////////////////////////////////////////////////////////////////////////
 	progress = new CMyProgressCtrl();
-	progress->Create(WS_VISIBLE|WS_CHILD, CRect(100, 235, 290, 214), this, 99);
-
+	progress->Create(WS_VISIBLE | WS_CHILD, CRect(100, 235, 290, 255), this, 99);
 	progress->SetRange(0, 100);
 	progress->ShowWindow(SW_HIDE);
-	
+
 	//gifManager->AddGifImage(PROGRESS_GIF, PROGRESS_VALUE);
 	//////////////////////////////////////////////////////////////////////////
 	if (m_ResultFilePathName.IsEmpty() || m_SourceFilePathName.IsEmpty())
 	{
-		AfxMessageBox(L"please select excel path and ts file path first, my master!");
+		AfxMessageBox(L"please select source path and target file path first, my master!");
 		return;
 	}
 	ReadExcelFile();
 	//判断是否查找到excel 文件
-	if (m_AllExcelFile.size() == 0)
+	if (m_CurAppType == Type_Translator)
 	{
-		AfxMessageBox(L"not find any excel file in the path, please check my master!");
-		return;
+		if (m_AllExcelFile.size() == 0)
+		{
+			AfxMessageBox(L"not find any source file in the path, please check my master!");
+			return;
+		}
 	}
 	//判断当前的过滤器是否设置正确
 	GetDlgItemText(IDC_FILTERBOX, m_FilterValue);
@@ -269,25 +282,34 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
 		AfxMessageBox(L"filter setting is not correct , please reInput!");
 		return;
 	}
-	TranslateTsFile();
-	//保存没有翻译的文本
-	saveUnMatchFile();
-	int iCount = m_UnMatchMap.size();
-	wchar_t strInfo[255] = { 0 };
-	wsprintf(strInfo, L"Translate finish, total %d string not found in the excel file.", iCount);
-	CString strInfoText = strInfo;
-
-	//提示用户结果
-	//CInfoDiaglog* dlg = new CInfoDiaglog(this);
-	CInfoDiaglog *dlg = new CInfoDiaglog(this);
-	dlg->Create(IDD_INFO_DIAOG);
-	CWnd* wnd = FindWindow(NULL, _T("Info"));
-	::SendMessage(
-		*FindWindow(NULL, _T("Info"))//FindWInd(NULL,_T(***))通过窗口名返回窗口的句柄指针
-		, WM_UNMATCH_TEXT
-		, (WPARAM)&strInfoText
-		, (LPARAM)&m_UnMatchTextFilePath);//信息的地址
-	dlg->ShowWindow(SW_NORMAL);
+	//获取ts文件
+	GetAllTsFile();
+	if (m_CurAppType == Type_Translator)
+	{
+		TranslateTsFile();
+		//保存没有翻译的文本
+		saveUnMatchFile();
+		int iCount = m_UnMatchMap.size();
+		wchar_t strInfo[255] = { 0 };
+		wsprintf(strInfo, L"Translate finish, total %d string not found in the excel file.", iCount);
+		CString strInfoText = strInfo;
+		//提示用户结果
+		//CInfoDiaglog* dlg = new CInfoDiaglog(this);
+		CInfoDiaglog *dlg = new CInfoDiaglog(this);
+		dlg->Create(IDD_INFO_DIAOG);
+		CWnd* wnd = FindWindow(NULL, _T("Info"));
+		::SendMessage(
+			*FindWindow(NULL, _T("Info"))//FindWInd(NULL,_T(***))通过窗口名返回窗口的句柄指针
+			, WM_UNMATCH_TEXT
+			, (WPARAM)&strInfoText
+			, (LPARAM)&m_UnMatchTextFilePath);//信息的地址
+		dlg->ShowWindow(SW_NORMAL);
+	}
+	else
+	{
+		//做文本提取操作
+		doExtracAction();
+	}
 }
 
 void CReadWriteExcel_MFCDlg::OnClose()
@@ -303,7 +325,7 @@ void CReadWriteExcel_MFCDlg::OnClose()
 void CReadWriteExcel_MFCDlg::ReadExcelFile()
 {
 	//遍历所有的excel文件
-	if (!m_IsReOpenExcelFile)
+	if (!m_IsReOpenExcelFile || m_CurAppType == Type_Extrctor)
 	{
 		return;
 	}
@@ -416,6 +438,39 @@ void CReadWriteExcel_MFCDlg::ReadTsFile()
 
 }
 
+void CReadWriteExcel_MFCDlg::GetAllTsFile()
+{
+	//readTs file
+	wstring strPathTmp = m_ResultFilePathName.GetString();
+	if (m_ISReoOpenTsFile)
+	{
+		find((wchar_t*)strPathTmp.c_str(), m_AllTsFile, L"\\*.ts");
+		m_ISReoOpenTsFile = false;
+	}
+}
+
+vector<string> CReadWriteExcel_MFCDlg::getTsFileByLanguage(string strLanguageType)
+{
+	vector<string> resultRect;
+	vector<string>::iterator iter = m_AllTsFile.begin();
+	string strFileName;
+	for (; iter != m_AllTsFile.end(); ++iter)
+	{
+		strFileName = getFileName(*iter);
+		wstring wstrFileName;
+		StringToWString(strFileName, wstrFileName);
+		string strFileType;
+		strFileType = getTsFileType(wstrFileName);
+		strFileType = trim(strFileType);
+		strLanguageType = trim(strLanguageType);
+		if (strFileType.compare(strLanguageType) == 0)
+		{
+			resultRect.push_back(*iter);
+		}
+	}
+	return resultRect;
+}
+
 void CReadWriteExcel_MFCDlg::DoTranslate()
 {
 
@@ -518,13 +573,6 @@ void CReadWriteExcel_MFCDlg::PreLoadSheet()
 
 void CReadWriteExcel_MFCDlg::TranslateTsFile()
 {
-	//readTs file
-	wstring strPathTmp = m_ResultFilePathName.GetString();
-	if (m_ISReoOpenTsFile)
-	{
-		find((wchar_t*)strPathTmp.c_str(), m_AllTsFile, L"\\*.ts");
-		m_ISReoOpenTsFile = false;
-	}
 	vector<string>::iterator iter = m_AllTsFile.begin();
 	if (m_AllTsFile.size() == 0)
 	{
@@ -551,14 +599,16 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 		{
 			continue;
 		}
+#ifdef _DEBUG
 		MessageBox(m_FilterValue);
+#endif	
 		tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();
 		tinyxml2::XMLError error = doc->LoadFile((*iter).c_str());
 		XMLElement* ele = doc->RootElement();
 		if (ele != NULL)
 		{
 			ele = ele->FirstChildElement("context");
-		}	
+		}
 		while (ele != NULL)
 		{
 			XMLNode* firstEle = ele->FirstChild();
@@ -640,7 +690,7 @@ std::string CReadWriteExcel_MFCDlg::TraslateRawData(string strRawData, string st
 	}
 	//TRACE(L"king*************is:%s\n", wstrRect.c_str());
 	//wstrRect = m_TranslateMap[cstrRawData].GetString();
-	
+
 	//strRect = ws2s(wstrRect);
 	WStringToString(wstrRect, strRect);
 	strRect = UnicodeToUtf8(wstrRect.c_str());
@@ -667,6 +717,28 @@ BOOL CReadWriteExcel_MFCDlg::WStringToString(const std::wstring &wstr, std::stri
 	str = p;
 	delete[] p;
 	return TRUE;*/
+}
+
+BOOL CReadWriteExcel_MFCDlg::StringToWString(const std::string &str, std::wstring &wstr)
+{
+	LPCSTR pszSrc = str.c_str();
+	int nLen = MultiByteToWideChar(CP_ACP, 0, pszSrc, -1, NULL, 0);
+	if (nLen == 0)
+	{
+		wstr = std::wstring(L"");
+		return FALSE;
+	}
+	wchar_t* pwszDst = new wchar_t[nLen];
+	if (!pwszDst)
+	{
+		wstr = std::wstring(L"");
+		return FALSE;
+	}
+	MultiByteToWideChar(CP_ACP, 0, pszSrc, -1, pwszDst, nLen);
+	wstr = std::wstring(pwszDst);
+	delete[] pwszDst;
+	pwszDst = NULL;
+	return TRUE;
 }
 
 void CReadWriteExcel_MFCDlg::ConvertTsFileToUTF8()
@@ -857,7 +929,7 @@ std::string CReadWriteExcel_MFCDlg::getTsFileType(wstring strFileName)
 
 string CReadWriteExcel_MFCDlg::ws2s(const std::wstring& wstr)
 {
-	using convert_typeX = std::codecvt_utf8 <wchar_t> ;
+	using convert_typeX = std::codecvt_utf8 < wchar_t > ;
 	std::wstring_convert<convert_typeX, wchar_t> converterX;
 	return converterX.to_bytes(wstr);
 }
@@ -875,12 +947,161 @@ char* CReadWriteExcel_MFCDlg::UnicodeToUtf8(const wchar_t* unicode)
 void CReadWriteExcel_MFCDlg::initData()
 {
 	m_FilterValue = "";
-	CString strTmp[7] = {L"ch",L"de",L"en",L"es",L"fr",L"it",L"pt"};
-	m_AllFilter.insert(m_AllFilter.begin(),&strTmp[0], &strTmp[6] + 1);
+	CString strTmp[7] = { L"ch", L"de", L"en", L"es", L"fr", L"it", L"pt" };
+	m_AllFilter.insert(m_AllFilter.begin(), &strTmp[0], &strTmp[6] + 1);
 	m_IsReOpenExcelFile = false;
 	m_ISReoOpenTsFile = false;
+	m_CurAppType = Type_Translator;
+	m_IsExtrcted = false;
+	//m_Tooltip.Create(this);
 }
 
+void CReadWriteExcel_MFCDlg::doExtracAction()
+{
+	if (m_IsExtrcted)
+	{
+		//如果已经成功替换
+		MessageBox(L"Extractor have extracted before");
+		return;
+	}
+	m_AllEnTsFile = getTsFileByLanguage("en");
+	//遍历ts文件做提取操作
+	vector<string>::iterator iter = m_AllEnTsFile.begin();
+	ofstream oFile;
+	CString strExcelpath = m_SourceFilePathName;
+	strExcelpath.Append(L"\\result.xls");
+	oFile.open(strExcelpath, ios::out | ios::trunc);
+	//使用进度条显示进度
+	progress->ShowWindow(SW_SHOW);
+	for (; iter != m_AllEnTsFile.end(); ++iter)
+	{
+		int iCurPos = iter - m_AllEnTsFile.begin();
+		float fPos = (float)iCurPos / (float)m_AllEnTsFile.size();
+		ifstream fileText(*iter);
+		string strAllText((std::istreambuf_iterator<char>(fileText)), std::istreambuf_iterator<char>());
+		string FileName = getFileName(*iter);
+		oFile << FileName << endl;
+		while (!strAllText.empty())
+		{
+			//非空做处理
+			int iIndex = strAllText.find("<source");
+			if (iIndex != string::npos)
+			{
+				strAllText = strAllText.substr(iIndex + 6);
+				iIndex = strAllText.find(">");
+				int iEndIndex = strAllText.find("</source>");
+				if (iEndIndex != string::npos)
+				{
+					string strExtract = strAllText.substr(iIndex + 1, iEndIndex - iIndex - 1);
+					wstring wstrExtract;
+					StringToWString(strExtract, wstrExtract);
+					CString cstrExtract = wstrExtract.c_str();
+					cstrExtract = ReplaceEntitySymbols(cstrExtract);
+					strExtract = CStringA(cstrExtract);
+					oFile << strExtract << endl;
+				}	
+			}
+			else
+			{
+				strAllText = "";
+			}
+		}
+		oFile << endl;  // 下一个文件替换的时候增加一个空格
+		progress->SetPos(fPos * 100);
+	}
+	progress->ShowWindow(SW_HIDE);
+	MessageBox(L"Extract finish");
+	m_IsExtrcted = true;
+}
+
+void CReadWriteExcel_MFCDlg::initUI()
+{
+	((CComboBox*)GetDlgItem(IDC_TYPE_COMBO))->AddString(L"Translate");
+	((CComboBox*)GetDlgItem(IDC_TYPE_COMBO))->AddString(L"StringExtractor");
+	((CComboBox*)GetDlgItem(IDC_TYPE_COMBO))->SelectString(-1, L"Translate");
+	//((CComboBox*)GetDlgItem(IDC_TYPE_COMBO))->SetCurSel(1);
+	m_ExtractorButton = new CButton();
+	m_ExtractorButton->Create(L"Extractor", WS_CHILD | WS_VISIBLE | WS_BORDER | BS_PUSHBUTTON, CRect(40, 40, 140, 100), this, 101);
+	m_ExtractorButton->ShowWindow(false);
+	SetDlgItemText(IDC_SOURCETEXT, L"Translate Excel Folder:");
+	SetDlgItemText(ID_RESULTPATHTEXT, L"Translate Ts Folder:");
+	//自适应控件大小 固定窗口大小  增加tooltip
+	FontFlag fontSize = getStringSize(L"Translate Excel Folder:");
+	//获取控件的当前位置
+	CRect rectPos;
+	GetDlgItem(IDC_SOURCETEXT)->GetWindowRect(rectPos);
+	GetDlgItem(IDC_SOURCETEXT)->SetWindowPos(NULL, rectPos.left, rectPos.top, fontSize.lWidth, fontSize.lHeight, SWP_NOZORDER | SWP_NOMOVE);
+	GetDlgItem(ID_RESULTPATHTEXT)->GetWindowRect(rectPos);
+	fontSize = getStringSize(L"Translate Ts Folder:");
+	GetDlgItem(IDC_SOURCETEXT)->SetWindowPos(NULL, rectPos.left, rectPos.top, fontSize.lWidth, fontSize.lHeight, SWP_NOZORDER | SWP_NOMOVE);
+	::SetWindowLong(m_hWnd, GWL_STYLE, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX); 
+	//m_Tooltip.Create(this);
+	//setToolTip(IDC_SOURCETEXT,L"请输入存放excel对应的文件夹"); 请输入存放Ts文件对应的文件夹
+	EnableToolTips(TRUE);
+	setToolTip();
+	//设置窗口的名称：
+	SetWindowText(L"Translate tool");
+}
+
+FontFlag CReadWriteExcel_MFCDlg::getStringSize(CString strText)
+{
+	//设置文本框字体  
+	CFont* ptf = GetDlgItem(IDC_SOURCETEXT)->GetFont(); // 得到原来的字体    
+	LOGFONT lf;
+	ptf->GetLogFont(&lf);
+	FontFlag fontSize;
+	CSize strSize;
+	CDC *pDC = GetDC();
+	strSize = pDC->GetTextExtent(strText);
+	ReleaseDC(pDC);
+	fontSize.lWidth = strSize.cx;
+	fontSize.lHeight = strSize.cy;
+	return fontSize;
+}
+
+void CReadWriteExcel_MFCDlg::setToolTip()
+{
+	BOOL bRec =   m_Tooltip.Create(this);
+	m_Tooltip.Activate(TRUE);
+	m_Tooltip.AddTool(&m_SourcePathText, L"请输入excel 文件所在的文件夹");
+	m_Tooltip.AddTool(&m_ResultPathText, L"请输入.TS 文件所在的文件夹");
+	m_Tooltip.AddTool(GetDlgItem(IDC_FILTER), L"请输入需要翻译的特定语言，如：en pt fr等");
+	//m_Tooltip.SetMaxTipWidth(123);
+	m_Tooltip.SetTipTextColor(RGB(255, 0, 0));
+	m_Tooltip.SetTipBkColor(RGB(255, 0, 255));
+	//m_Tooltip.SetDelayTime(2500);
+}
+
+CString  CReadWriteExcel_MFCDlg::ReplaceEntitySymbols(CString strText)
+{
+	CString strRsult = strText;
+	//替换常用的实体符号
+	int iIndex = -1;
+	iIndex = strRsult.Find(L"&rdquo;");
+	if (iIndex != -1)
+	{
+		strRsult.Replace(L"&rdquo;", L"\"");
+		iIndex = -1;
+	}
+	iIndex = strRsult.Find(L"&apos;");
+	if (iIndex != -1)
+	{
+		strRsult.Replace(L"&apos;", L"\'");
+		iIndex = -1;
+	}
+	iIndex = strRsult.Find(L"&quot;");
+	if (iIndex != -1)
+	{
+		strRsult.Replace(L"&quot;", L"\"");
+			iIndex = -1;
+	}
+	//对于文本中的特殊符号做特殊处理 + -  =
+	if (strRsult.Find(L"+") == 0 || strRsult.Find(L"-") == 0 || strRsult.Find(L"=") == 0)
+	{
+		strRsult.Format(L"%c%s", L'\'', strRsult);
+	}
+	return strRsult;
+}
 
 void CReadWriteExcel_MFCDlg::OnChangeFilterbox()
 {
@@ -897,4 +1118,46 @@ void CReadWriteExcel_MFCDlg::OnChangeFilterbox()
 	{
 		GetDlgItem(ID_TRANSLATE)->EnableWindow(TRUE);
 	}
+}
+
+
+void CReadWriteExcel_MFCDlg::OnSelchangeTypeCombo()
+{
+	// TODO:  在此添加控件通知处理程序代码
+	//获取当前选中项目
+	CString strCurType;
+	//((CComboBox*)GetDlgItem(IDC_TYPE_COMBO))->GetWindowText(strCurType);
+	int iIndex = ((CComboBox*)GetDlgItem(IDC_TYPE_COMBO))->GetCurSel();
+	((CComboBox*)GetDlgItem(IDC_TYPE_COMBO))->GetLBText(iIndex, strCurType);
+
+	if (strCurType.Compare(L"Translate") == 0)
+	{
+		//如果当前是选中 Translate
+		m_CurAppType = Type_Translator;
+		SetDlgItemText(ID_TRANSLATE, L"Translate");
+		SetDlgItemText(IDC_SOURCETEXT, L"Translate Excel Folder:");
+		SetDlgItemText(ID_RESULTPATHTEXT, L"Translate Ts Folder:");
+		SetWindowText(L"Translate tool");
+	}
+	else
+	{
+		//如果当前选中的是提取器
+		m_CurAppType = Type_Extrctor;
+		SetDlgItemText(ID_TRANSLATE, L"Extractor");
+		SetDlgItemText(IDC_SOURCETEXT, L"Extractor Excel Folder:");
+		SetDlgItemText(ID_RESULTPATHTEXT, L"Extractor Ts Folder:");
+		SetWindowText(L"Extractor tool");
+	}
+}
+
+BOOL CReadWriteExcel_MFCDlg::PreTranslateMessage(MSG* pMsg)
+{
+	// TODO:  在此添加专用代码和/或调用基类
+	ASSERT(pMsg != NULL);
+	if (pMsg->message == WM_MOUSEMOVE || pMsg->message == WM_LBUTTONDOWN || pMsg->message == WM_LBUTTONUP)
+		if (m_Tooltip.m_hWnd != NULL)
+		{
+		    m_Tooltip.RelayEvent(pMsg);
+		}
+	return CDialogEx::PreTranslateMessage(pMsg);
 }

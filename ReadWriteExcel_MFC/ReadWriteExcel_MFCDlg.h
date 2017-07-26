@@ -12,8 +12,21 @@
 #include ".\excelReader\Worksheets.h"
 #include ".\excelReader\Worksheet.h"
 #include ".\excelReader\Range.h"
+#include "afxwin.h"
 using namespace std;
 class CMyProgressCtrl;
+enum AppType
+{
+	Type_Translator,   //替换器
+	Type_Extrctor      //文本提取器
+};
+
+//字体大小标志
+typedef struct 
+{
+	long lWidth;
+	long lHeight;
+}FontFlag;
 
 #define WM_UNMATCH_TEXT (WM_USER+100)
 
@@ -49,6 +62,10 @@ private:
     void ReadExcelFile();
     //读取ts中的内容
     void ReadTsFile();
+	//获取当前项目下的所有ts文件
+	void GetAllTsFile();
+	//获取特定语言的ts文件的集合
+	vector<string> getTsFileByLanguage(string strLanguageType);
     //进行翻译工作
     void DoTranslate();
     int GetColumnCount();
@@ -58,6 +75,7 @@ private:
 	void TranslateTsFile();
 	std::string TraslateRawData(std::string strRawData,std::string strType);
 	BOOL WStringToString(const std::wstring &wstr, std::string &str);
+	BOOL StringToWString(const std::string &str, std::wstring &wstr);
 	//将处理后的文件转换成UTF8编码格式
 	void ConvertTsFileToUTF8();
 	std::string string_To_UTF8(const std::string & str);
@@ -74,7 +92,17 @@ private:
 	char* UnicodeToUtf8(const wchar_t* unicode);
 	//初始化成员变量
 	void initData();
-
+	//做提取操作
+	void doExtracAction();
+	//初始化界面
+	void initUI();
+	//获取特定字体的长度
+	FontFlag getStringSize(CString strText);
+	//显示特定的tooltip
+	void setToolTip();
+	//优化：替换实体符号
+	CString ReplaceEntitySymbols(CString strText);
+	
 private:
     CString m_SourceFilePathName;//存储翻译对应关系的excel文件
     CString m_ResultFilePathName; //需要被翻译文件的绝对路径
@@ -93,6 +121,7 @@ private:
     COleSafeArray ole_safe_array_;
 	vector<string> m_AllExcelFile;//所有的excel文件的集合
 	vector<string> m_AllTsFile; //所有的ts文件的集合
+	vector<string> m_AllEnTsFile; //当前项目下所有的英文版本的ts文件集合
 	CString        m_CurrentHandleTsFile;//当前正在处理的ts文件名
 	CString        m_UnMatchTextFilePath;//保存未匹配到的字符串的文件路径
 	CString        m_CurrentHandleTsPath;//当前正在被处理的Ts的文件的路径
@@ -101,6 +130,16 @@ private:
 	CMyProgressCtrl* progress;
 	bool             m_IsReOpenExcelFile; //是否重新打开excel文件
 	bool             m_ISReoOpenTsFile; //是否重新打开Ts文件
+	bool             m_IsExtrcted;     //当前ts文件是否已经替换过
+	AppType             m_CurAppType;      //当前页面类型
+	CButton*         m_ExtractorButton; //提取按钮
+	CToolTipCtrl     m_Tooltip;         //显示tooltip
+	// excel文件所在文件夹
+	CStatic m_SourcePathText;
+	// ts文件所在文件夹
+	CStatic m_ResultPathText;
 public:
 	afx_msg void OnChangeFilterbox();
+	afx_msg void OnSelchangeTypeCombo();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
