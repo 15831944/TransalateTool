@@ -251,7 +251,7 @@ void CReadWriteExcel_MFCDlg::OnBnClickedTranslate()
 	//progress->SetRange(0, 100);
 	////////////////////////////////////////////////////////////////////////
 	progress = new CMyProgressCtrl();
-	progress->Create(WS_VISIBLE | WS_CHILD, CRect(100, 235, 290, 255), this, 99);
+	progress->Create(WS_VISIBLE | WS_CHILD, CRect(130, 235, 320, 250), this, 99);
 	progress->SetRange(0, 100);
 	progress->ShowWindow(SW_HIDE);
 
@@ -600,7 +600,7 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 			continue;
 		}
 #ifdef _DEBUG
-		MessageBox(m_FilterValue);
+		//MessageBox(m_FilterValue);
 #endif	
 		tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();
 		tinyxml2::XMLError error = doc->LoadFile((*iter).c_str());
@@ -620,8 +620,27 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 					XMLElement* child = firstEle->FirstChildElement();
 					string strRawText;
 					string strTraslateText;
-					while (child != NULL)
+					XMLElement* translateElement = NULL;
+					bool bIsTraslated = false;
+					bool bIsGetName = GetNodePointerByName(firstEle->ToElement(), string("translation"), translateElement);
+					if (bIsGetName)
 					{
+						string strtext = translateElement->Attribute("type");
+						if (strtext.compare("unfinished") != 0)
+						{
+							bIsTraslated = true;
+						}
+					}
+					//判断是否设置需要做强制替换
+					BOOL bIsForcedReplace = ((CButton*)GetDlgItem(IDC_FORCE_REPLACE))->GetCheck();
+					if (!bIsForcedReplace && bIsTraslated)
+					{
+						firstEle = firstEle->NextSibling();
+						continue;
+						//跳过当前不要翻译的文本
+					}
+					while (child != NULL)
+					{		
 						if (string(child->Name()) == "source")
 						{
 							strRawText = child->GetText();
@@ -653,6 +672,7 @@ void CReadWriteExcel_MFCDlg::TranslateTsFile()
 		//ConvertTsFileToUTF8();
 	}
 	//翻译完成后，隐藏进度条控件
+	Sleep(1000);
 	progress->ShowWindow(SW_HIDE);
 	//禁用翻译按钮
 	GetDlgItem(ID_TRANSLATE)->EnableWindow(FALSE);
@@ -1101,6 +1121,24 @@ CString  CReadWriteExcel_MFCDlg::ReplaceEntitySymbols(CString strText)
 		strRsult.Format(L"%c%s", L'\'', strRsult);
 	}
 	return strRsult;
+}
+
+bool CReadWriteExcel_MFCDlg::GetNodePointerByName(XMLElement* pRootEle, std::string &strNodeName, XMLElement* &Node)
+{
+	// 假如等于根节点名，就退出   
+	if (strNodeName == pRootEle->Name())
+	{
+		Node = pRootEle;
+		return true;
+	}
+	XMLElement* pEle = pRootEle;
+	for (pEle = pRootEle->FirstChildElement(); pEle; pEle = pEle->NextSiblingElement())
+	{
+		//递归处理子节点，获取节点指针   
+		if (GetNodePointerByName(pEle, strNodeName, Node))
+			return true;
+	}
+	return false;
 }
 
 void CReadWriteExcel_MFCDlg::OnChangeFilterbox()

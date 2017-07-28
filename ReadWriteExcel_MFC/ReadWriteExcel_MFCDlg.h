@@ -12,6 +12,7 @@
 #include ".\excelReader\Worksheets.h"
 #include ".\excelReader\Worksheet.h"
 #include ".\excelReader\Range.h"
+#include "tinyxml2.h"
 #include "afxwin.h"
 using namespace std;
 class CMyProgressCtrl;
@@ -102,6 +103,9 @@ private:
 	void setToolTip();
 	//优化：替换实体符号
 	CString ReplaceEntitySymbols(CString strText);
+	//获取xml特定节点元素
+	bool GetNodePointerByName(tinyxml2::XMLElement* pRootEle, std::string &strNodeName, tinyxml2::XMLElement* &Node);
+
 	
 private:
     CString m_SourceFilePathName;//存储翻译对应关系的excel文件
